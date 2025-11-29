@@ -1,79 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const Item = require('../models/Item'); // import item model
+const Item = require('../models/Item');
 
-// GET all items
+// CREATE new item
+router.post('/', async (req, res) => {
+  try {
+    const { name, quantity, price } = req.body;
+    const item = new Item({ name, quantity, price });
+    await item.save();
+    res.status(201).json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: 'Failed to create item', error: err.message });
+  }
+});
+
+// READ all items
 router.get('/', async (req, res) => {
   try {
-    const items = await Item.find(); // fetch all items from database
-    res.json(items); // return items as JSON
+    const items = await Item.find();
+    res.json(items);
   } catch (err) {
-    res.status(500).json({ message: err.message }); // internal server error
+    res.status(500).json({ message: 'Failed to fetch items', error: err.message });
   }
 });
 
-// CREATE a new item
-router.post('/', async (req, res) => {
-  // create new item using request body
-  const item = new Item({
-    name: req.body.name,
-    quantity: req.body.quantity
-  });
-
+// UPDATE quantity
+router.put('/:id', async (req, res) => {
   try {
-    const newItem = await item.save(); // save item to database
-    res.status(201).json(newItem); // return created item with 201 status
+    const item = await Item.findByIdAndUpdate(
+      req.params.id,
+      { quantity: req.body.quantity },
+      { new: true }
+    );
+    res.json(item);
   } catch (err) {
-    res.status(400).json({ message: err.message }); // bad request error
+    res.status(400).json({ message: 'Failed to update item', error: err.message });
   }
 });
 
-// READ a single item by ID
-router.get('/:id', getItem, (req, res) => {
-  res.json(res.item); // return item fetched by getItem middleware
-});
-
-// UPDATE an existing item
-router.patch('/:id', getItem, async (req, res) => {
-  if (req.body.name != null) {
-    res.item.name = req.body.name; // update name if provided
-  }
-  if (req.body.quantity != null) {
-    res.item.quantity = req.body.quantity; // update quantity if provided
-  }
-
+// DELETE item
+router.delete('/:id', async (req, res) => {
   try {
-    const updatedItem = await res.item.save(); // save updated item
-    res.json(updatedItem); // return updated item
+    await Item.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Item deleted' });
   } catch (err) {
-    res.status(400).json({ message: err.message }); // bad request error
+    res.status(400).json({ message: 'Failed to delete item', error: err.message });
   }
 });
 
-// DELETE an item
-router.delete('/:id', getItem, async (req, res) => {
-  try {
-    await res.item.remove(); // remove item from database
-    res.json({ message: 'Deleted Item' }); // confirm deletion
-  } catch (err) {
-    res.status(500).json({ message: err.message }); // internal server error
-  }
-});
-
-// middleware to fetch item by ID
-async function getItem(req, res, next) {
-  let item;
-  try {
-    item = await Item.findById(req.params.id); // find item by ID
-    if (item == null) {
-      return res.status(404).json({ message: 'Cannot find item' }); // item not found
-    }
-  } catch (err) {
-    return res.status(500).json({ message: err.message }); // internal server error
-  }
-
-  res.item = item; // attach item to response for next middleware
-  next(); // proceed to next route handler
-}
-
-module.exports = router; // export router for use in server
+module.exports = router;
