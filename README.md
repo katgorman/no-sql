@@ -1,6 +1,10 @@
 # Inventory System 
 A simple web-based inventory manager built with Node.js, Express, and MongoDB. 
 
+## Team Members
+- Kat Gorman
+- Sasha Dzhanibekova
+
 ## Tech Stack
 **Backend:** Node.js, Express, Mongoose  
 **Database:** MongoDB  
